@@ -25,11 +25,40 @@ const buildEventsTable = (data) => {
   }
 };
 
+const buildCorrelationsTable = (data) => {
+  const correlationsTable = document.getElementById("correlations-table");
+  const correlationsTableBody = correlationsTable.tBodies[0];
+
+  for (let i = 0; i < data.length; i++) {
+    // Insert row and cells
+    const row = correlationsTableBody.insertRow(i);
+    let indexCell = document.createElement("th");
+    row.appendChild(indexCell);
+    const eventCell = row.insertCell(1);
+    const correlationCell = row.insertCell(2);
+
+    // Set cells
+    indexCell.innerHTML = i + 1;
+    eventCell.innerHTML = data[i].event;
+    correlationCell.innerHTML = data[i].correlation;
+  }
+};
+
 const calculateMCC = (TN, FN, FP, TP) => {
   let ans = TP * TN - FP * FN;
   ans = ans / Math.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN));
   return ans;
 };
+
+function compareCorrelationObjects(a, b) {
+  if (a.correlation > b.correlation) {
+    return -1;
+  }
+  if (a.correlation < b.correlation) {
+    return 1;
+  }
+  return 0;
+}
 
 /* Instructions */
 fetch(URL)
@@ -62,5 +91,6 @@ fetch(URL)
       };
     });
 
-    console.log(res);
+    res.sort(compareCorrelationObjects);
+    buildCorrelationsTable(res);
   });
