@@ -25,9 +25,42 @@ const buildEventsTable = (data) => {
   }
 };
 
+const calculateMCC = (TN, FN, FP, TP) => {
+  let ans = TP * TN - FP * FN;
+  ans = ans / Math.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN));
+  return ans;
+};
+
 /* Instructions */
 fetch(URL)
   .then((res) => res.json())
   .then((data) => {
     buildEventsTable(data);
+
+    const correlations = {};
+    let totalTrues = 0;
+    let totalFalses = 0;
+
+    data.forEach((day) => {
+      if (day.squirrel) totalTrues++;
+      else totalFalses++;
+
+      day.events.forEach((event) => {
+        if (!correlations[event]) correlations[event] = [0, 0, 0, 0];
+        if (day.squirrel) correlations[event][3] += 1;
+        else correlations[event][1] += 1;
+      });
+    });
+
+    const res = Object.keys(correlations).map((event) => {
+      const matrix = correlations[event];
+      const TN = totalFalses - matrix[1];
+      const TP = totalTrues - matrix[3];
+      return {
+        event: event,
+        correlation: calculateMCC(TN, matrix[1], TP, matrix[3]),
+      };
+    });
+
+    console.log(res);
   });
