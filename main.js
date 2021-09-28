@@ -64,33 +64,45 @@ function compareCorrelationObjects(a, b) {
 fetch(URL)
   .then((res) => res.json())
   .then((data) => {
+    // Fills in table that displays events
     buildEventsTable(data);
 
-    const correlations = {};
+    // Variables to count occurences
+    const eventsCount = {};
     let totalTrues = 0;
     let totalFalses = 0;
 
+    // Counts occurrences:
+    // eventsCount will hold dictionary with events and their FN & TP
     data.forEach((day) => {
       if (day.squirrel) totalTrues++;
       else totalFalses++;
 
       day.events.forEach((event) => {
-        if (!correlations[event]) correlations[event] = [0, 0, 0, 0];
-        if (day.squirrel) correlations[event][3] += 1;
-        else correlations[event][1] += 1;
+        // Adds event entry to dictionary if unexisting event
+        if (!eventsCount[event]) eventsCount[event] = {FN: 0, TP: 0};
+
+        // Increases true or false count for each event occurrence
+        if (day.squirrel) eventsCount[event].TP += 1;
+        else eventsCount[event].FN += 1;
       });
     });
 
-    const res = Object.keys(correlations).map((event) => {
-      const matrix = correlations[event];
-      const TN = totalFalses - matrix[1];
-      const TP = totalTrues - matrix[3];
+    // Obtains TN & FP from the totals and FN & TP info
+    // Calculates MCC
+    const correlations = Object.keys(eventsCount).map((event) => {
+      const {FN, TP} = eventsCount[event];
+      const TN = totalFalses - FN;
+      const FP = totalTrues - TP;
       return {
-        event: event,
-        correlation: calculateMCC(TN, matrix[1], TP, matrix[3]),
+        event,
+        correlation: calculateMCC(TN, FN, FP, TP),
       };
     });
 
-    res.sort(compareCorrelationObjects);
-    buildCorrelationsTable(res);
+    // Sorts correlations array based on correlation score
+    correlations.sort(compareCorrelationObjects);
+
+    // Fills in table that displays correlations for each event
+    buildCorrelationsTable(correlations);
   });
